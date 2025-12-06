@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- 제목 -->
+        <EditText
+            android:id="@+id/editTitle"
+            android:hint="제목"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- 내용 -->
+        <EditText
+            android:id="@+id/editContent"
+            android:hint="내용"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minLines="4"/>
+
+        <!-- 위치(습득 장소) -->
+        <EditText
+            android:id="@+id/editLocation"
+            android:hint="습득 장소"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- 카테고리 -->
+        <EditText
+            android:id="@+id/editCategory"
+            android:hint="카테고리 ID (예: 1)"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- 이미지 미리보기 -->
+        <ImageView
+            android:id="@+id/imgPreview"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            android:background="#e0e0e0"
+            android:padding="8dp"/>
+
+        <!-- 이미지 선택 버튼 -->
+        <Button
+            android:id="@+id/btnSelectImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="이미지 선택" />
+
+        <!-- 업로드 버튼 -->
+        <Button
+            android:id="@+id/btnUpload"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="등록하기" />
+
+        <ProgressBar
+            android:id="@+id/progressUpload"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            style="?android:attr/progressBarStyleLarge"/>
+    </LinearLayout>
+</ScrollView>
