@@ -2,7 +2,6 @@ package com.example.lostfinder.ui.post.detail
 
 import android.app.AlertDialog
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -29,12 +28,13 @@ class PostDetailActivity : AppCompatActivity() {
         val img = findViewById<ImageView>(R.id.imgPost)
         val title = findViewById<TextView>(R.id.textTitle)
         val content = findViewById<TextView>(R.id.textContent)
+        val foundLocation = findViewById<TextView>(R.id.textFoundLocation)   // ★ 습득 장소 추가
         val btnContact = findViewById<Button>(R.id.btnContact)
 
-        // 게시글 상세 데이터 로드
+        // 게시글 상세 로드
         viewModel.loadPost(postId)
 
-        // 게시글 상세 UI 처리
+        // UI 처리
         viewModel.state.collectWhenStarted(this) { state ->
             when (state) {
 
@@ -49,18 +49,16 @@ class PostDetailActivity : AppCompatActivity() {
                 is PostDetailViewModel.PostDetailState.Success -> {
                     val data = state.data
 
-                    // 🔥 서버에서 오는 imageUrl이 뭔지 확인용 Log
-                    Log.d("POST_DETAIL", "imageUrl = ${data.imageUrl}")
-
                     title.text = data.title
                     content.text = data.content
+                    foundLocation.text = data.foundLocation ?: "정보 없음"   // ★ 표시
 
                     Glide.with(this)
                         .load(data.imageUrl)
                         .placeholder(R.drawable.ic_launcher_background)
+                        .fitCenter()
                         .into(img)
 
-                    // 연락처 조회 버튼
                     btnContact.setOnClickListener {
                         viewModel.loadContact(postId)
                     }
@@ -73,8 +71,6 @@ class PostDetailActivity : AppCompatActivity() {
             when (state) {
                 is PostDetailViewModel.ContactState.Success -> {
                     val contact = state.data
-
-                    // 📌 writerName, writerPhone 정확히 매칭
                     showContactDialog(contact.writerName, contact.writerPhone)
                 }
 
@@ -93,12 +89,12 @@ class PostDetailActivity : AppCompatActivity() {
             .setTitle("작성자 연락처")
             .setMessage("👤 이름: $name\n📱 전화번호: $phone")
             .setPositiveButton("닫기") { _, _ ->
-                viewModel.resetContactState()   // 닫기 버튼 누를 때 초기화
+                viewModel.resetContactState()
             }
             .create()
 
         dialog.setOnDismissListener {
-            viewModel.resetContactState()       // 외부 터치로 닫혀도 초기화
+            viewModel.resetContactState()
         }
 
         dialog.show()
