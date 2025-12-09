@@ -25,15 +25,22 @@ class PostCreateActivity : ComponentActivity() {
     private lateinit var viewModel: PostCreateViewModel
     private var imageUri: Uri? = null
 
-    // 지도에서 받은 좌표 저장
     private var selectedLat: Double? = null
     private var selectedLng: Double? = null
 
-    // 지도 선택 Activity 결과 받기
+    /** 이미지 선택 */
+    private val pickImageLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) {
+                imageUri = uri
+                findViewById<ImageView>(R.id.imgPreview).setImageURI(uri)
+            }
+        }
+
+    /** 지도에서 좌표 받기 */
     private val mapSelectLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-
                 selectedLat = result.data?.getDoubleExtra("lat", 0.0)
                 selectedLng = result.data?.getDoubleExtra("lng", 0.0)
 
@@ -53,44 +60,43 @@ class PostCreateActivity : ComponentActivity() {
 
         val editTitle = findViewById<EditText>(R.id.editTitle)
         val editContent = findViewById<EditText>(R.id.editContent)
-        val editLocation = findViewById<EditText>(R.id.editLocation)  // ← 직접 입력
+        val editLocation = findViewById<EditText>(R.id.editLocation)
         val editCategory = findViewById<EditText>(R.id.editCategory)
-
-        val imgPreview = findViewById<ImageView>(R.id.imgPreview)
         val btnSelectImage = findViewById<Button>(R.id.btnSelectImage)
         val btnSelectLocation = findViewById<Button>(R.id.btnSelectLocation)
         val btnUpload = findViewById<Button>(R.id.btnUpload)
         val progress = findViewById<ProgressBar>(R.id.progressUpload)
 
-        /** 이미지 선택 **/
+        /** 이미지 선택 */
         btnSelectImage.setOnClickListener {
-            val intent = Intent(Intent.ACTION_GET_CONTENT)
-            intent.type = "image/*"
-            startActivityForResult(intent, 1001)
+            pickImageLauncher.launch("image/*")
         }
 
-        /** 지도 위치 선택 **/
+        /** 지도 위치 선택 */
         btnSelectLocation.setOnClickListener {
             val intent = Intent(this, MapSelectActivity::class.java)
             mapSelectLauncher.launch(intent)
         }
 
-        /** 게시글 업로드 **/
+        /** 업로드 */
         btnUpload.setOnClickListener {
 
             val title = editTitle.text.toString()
             val content = editContent.text.toString()
-
-            val locationText = editLocation.text.toString()   // ← 사용자 입력 (주소 설명)
+            val locationText = editLocation.text.toString()
             val categoryId = editCategory.text.toString().toLong()
 
-            // ★ 좌표 반드시 선택해야 업로드 가능
+            if (imageUri == null) {
+                Toast.makeText(this, "이미지를 선택하세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             if (selectedLat == null || selectedLng == null) {
                 Toast.makeText(this, "지도를 열어 위치를 선택하세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Request DTO 생성
+            // Request DTO
             val requestDto = PostCreateRequest(
                 title = title,
                 content = content,
