@@ -10,10 +10,20 @@ import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.example.lostfinder.R
 import com.example.lostfinder.util.collectWhenStarted
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 
-class PostDetailActivity : AppCompatActivity() {
+class PostDetailActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private val viewModel: PostDetailViewModel by viewModels()
+
+    private var googleMap: GoogleMap? = null
+    private var savedLat: Double? = null
+    private var savedLng: Double? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,13 +38,18 @@ class PostDetailActivity : AppCompatActivity() {
         val img = findViewById<ImageView>(R.id.imgPost)
         val title = findViewById<TextView>(R.id.textTitle)
         val content = findViewById<TextView>(R.id.textContent)
-        val foundLocation = findViewById<TextView>(R.id.textFoundLocation)   // ★ 습득 장소 추가
+        val foundLocation = findViewById<TextView>(R.id.textFoundLocation)
         val btnContact = findViewById<Button>(R.id.btnContact)
 
-        // 게시글 상세 로드
+        /** ⭐ 지도 Fragment 초기화 */
+        val mapFragment =
+            supportFragmentManager.findFragmentById(R.id.detailMap) as SupportMapFragment
+        mapFragment.getMapAsync(this)
+
+        /** ⭐ 상세 정보 로드 */
         viewModel.loadPost(postId)
 
-        // UI 처리
+        /** ⭐ UI 갱신 처리 */
         viewModel.state.collectWhenStarted(this) { state ->
             when (state) {
 
@@ -51,13 +66,20 @@ class PostDetailActivity : AppCompatActivity() {
 
                     title.text = data.title
                     content.text = data.content
-                    foundLocation.text = data.foundLocation ?: "정보 없음"   // ★ 표시
+                    foundLocation.text = data.foundLocation ?: "정보 없음"
 
                     Glide.with(this)
                         .load(data.imageUrl)
                         .placeholder(R.drawable.ic_launcher_background)
                         .fitCenter()
                         .into(img)
+
+                    /** ⭐ 저장된 좌표 보관 */
+                    savedLat = data.lat
+                    savedLng = data.lng
+
+                    /** ⭐ 지도 마커 업데이트 */
+                    updateMapMarker()
 
                     btnContact.setOnClickListener {
                         viewModel.loadContact(postId)
@@ -66,12 +88,11 @@ class PostDetailActivity : AppCompatActivity() {
             }
         }
 
-        // 연락처 팝업 처리
+        /** ⭐ 연락처 팝업 상태 처리 */
         viewModel.contactState.collectWhenStarted(this) { state ->
             when (state) {
                 is PostDetailViewModel.ContactState.Success -> {
-                    val contact = state.data
-                    showContactDialog(contact.writerName, contact.writerPhone)
+                    showContactDialog(state.data.writerName, state.data.writerPhone)
                 }
 
                 is PostDetailViewModel.ContactState.Error -> {
@@ -81,6 +102,25 @@ class PostDetailActivity : AppCompatActivity() {
                 else -> Unit
             }
         }
+    }
+
+    /** ⭐ 구글맵 준비 완료 */
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        updateMapMarker()
+    }
+
+    /** ⭐ 지도에 마커 표시 + 카메라 이동 */
+    private fun updateMapMarker() {
+        val lat = savedLat ?: return
+        val lng = savedLng ?: return
+        val map = googleMap ?: return
+
+        val position = LatLng(lat, lng)
+
+        map.clear()
+        map.addMarker(MarkerOptions().position(position).title("습득 위치"))
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 16f))
     }
 
     /** 연락처 다이얼로그 */

@@ -6,15 +6,16 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.*
 import androidx.activity.ComponentActivity
-import androidx.lifecycle.lifecycleScope
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.example.lostfinder.R
 import com.example.lostfinder.data.model.post.PostCreateRequest
+import com.example.lostfinder.ui.map.MapSelectActivity
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.collectLatest
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
@@ -22,9 +23,27 @@ import java.io.File
 class PostCreateActivity : ComponentActivity() {
 
     private lateinit var viewModel: PostCreateViewModel
-
     private var imageUri: Uri? = null
-    private val PICK_IMAGE = 1001
+
+    // 지도에서 받은 좌표 저장
+    private var selectedLat: Double? = null
+    private var selectedLng: Double? = null
+
+    // 지도 선택 Activity 결과 받기
+    private val mapSelectLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+
+                selectedLat = result.data?.getDoubleExtra("lat", 0.0)
+                selectedLng = result.data?.getDoubleExtra("lng", 0.0)
+
+                Toast.makeText(
+                    this,
+                    "위치 선택 완료: $selectedLat, $selectedLng",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,10 +53,12 @@ class PostCreateActivity : ComponentActivity() {
 
         val editTitle = findViewById<EditText>(R.id.editTitle)
         val editContent = findViewById<EditText>(R.id.editContent)
-        val editLocation = findViewById<EditText>(R.id.editLocation)
+        val editLocation = findViewById<EditText>(R.id.editLocation)  // ← 직접 입력
         val editCategory = findViewById<EditText>(R.id.editCategory)
+
         val imgPreview = findViewById<ImageView>(R.id.imgPreview)
         val btnSelectImage = findViewById<Button>(R.id.btnSelectImage)
+        val btnSelectLocation = findViewById<Button>(R.id.btnSelectLocation)
         val btnUpload = findViewById<Button>(R.id.btnUpload)
         val progress = findViewById<ProgressBar>(R.id.progressUpload)
 
@@ -45,69 +66,79 @@ class PostCreateActivity : ComponentActivity() {
         btnSelectImage.setOnClickListener {
             val intent = Intent(Intent.ACTION_GET_CONTENT)
             intent.type = "image/*"
-            startActivityForResult(intent, PICK_IMAGE)
+            startActivityForResult(intent, 1001)
         }
 
-        /** 업로드 **/
+        /** 지도 위치 선택 **/
+        btnSelectLocation.setOnClickListener {
+            val intent = Intent(this, MapSelectActivity::class.java)
+            mapSelectLauncher.launch(intent)
+        }
+
+        /** 게시글 업로드 **/
         btnUpload.setOnClickListener {
 
             val title = editTitle.text.toString()
             val content = editContent.text.toString()
-            val location = editLocation.text.toString()
+
+            val locationText = editLocation.text.toString()   // ← 사용자 입력 (주소 설명)
             val categoryId = editCategory.text.toString().toLong()
 
-            // JSON RequestBody 생성
-            val requestDto = PostCreateRequest(title, content, location, categoryId)
-            val gson = Gson()
-            val json = gson.toJson(requestDto)
+            // ★ 좌표 반드시 선택해야 업로드 가능
+            if (selectedLat == null || selectedLng == null) {
+                Toast.makeText(this, "지도를 열어 위치를 선택하세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
+            // Request DTO 생성
+            val requestDto = PostCreateRequest(
+                title = title,
+                content = content,
+                foundLocation = locationText,
+                categoryId = categoryId,
+                lat = selectedLat!!,
+                lng = selectedLng!!
+            )
+
+            val json = Gson().toJson(requestDto)
             val data = json.toRequestBody("application/json".toMediaTypeOrNull())
 
-            // 이미지 Part 생성
             val imagePart = imageUri?.let { uri ->
                 val file = uriToFile(uri)
-                val body = file.asRequestBody("image/*".toMediaTypeOrNull())
-                MultipartBody.Part.createFormData("image", file.name, body)
+                MultipartBody.Part.createFormData(
+                    "image",
+                    file.name,
+                    file.asRequestBody("image/*".toMediaTypeOrNull())
+                )
             }
 
             viewModel.createPost(imagePart, data)
         }
 
-        /** ViewModel 상태 수집 **/
         lifecycleScope.launchWhenStarted {
             viewModel.uploadState.collectLatest { state ->
                 when (state) {
                     PostCreateViewModel.UploadState.Loading -> {
                         progress.visibility = ProgressBar.VISIBLE
                     }
+
                     PostCreateViewModel.UploadState.Success -> {
                         progress.visibility = ProgressBar.GONE
                         Toast.makeText(this@PostCreateActivity, "등록 완료!", Toast.LENGTH_SHORT).show()
-                        setResult(Activity.RESULT_OK)
                         finish()
                     }
+
                     is PostCreateViewModel.UploadState.Error -> {
                         progress.visibility = ProgressBar.GONE
                         Toast.makeText(this@PostCreateActivity, state.msg, Toast.LENGTH_SHORT).show()
                     }
+
                     else -> {}
                 }
             }
         }
     }
 
-    /** 갤러리 선택 결과 처리 **/
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == PICK_IMAGE && resultCode == Activity.RESULT_OK) {
-            imageUri = data?.data
-            val preview = findViewById<ImageView>(R.id.imgPreview)
-            preview.setImageURI(imageUri)
-        }
-    }
-
-    /** Uri → File 변환 **/
     private fun uriToFile(uri: Uri): File {
         val inputStream = contentResolver.openInputStream(uri)
         val tempFile = File.createTempFile("upload_", ".jpg", cacheDir)
