@@ -25,6 +25,9 @@
       <SelectionState runConfigName="Lostfinder-Android.LostFinder.app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+      <SelectionState runConfigName="Lostfinder-Android.LostFinder.app">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>
