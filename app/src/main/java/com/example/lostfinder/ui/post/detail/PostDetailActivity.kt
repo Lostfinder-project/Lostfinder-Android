@@ -41,15 +41,15 @@ class PostDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         val foundLocation = findViewById<TextView>(R.id.textFoundLocation)
         val btnContact = findViewById<Button>(R.id.btnContact)
 
-        /** ⭐ 지도 Fragment 초기화 */
+        /** 지도 Fragment 초기화 */
         val mapFragment =
             supportFragmentManager.findFragmentById(R.id.detailMap) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        /** ⭐ 상세 정보 로드 */
+        /** 상세 정보 로드 */
         viewModel.loadPost(postId)
 
-        /** ⭐ UI 갱신 처리 */
+        /** UI 갱신 처리 */
         viewModel.state.collectWhenStarted(this) { state ->
             when (state) {
 
@@ -74,11 +74,11 @@ class PostDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                         .fitCenter()
                         .into(img)
 
-                    /** ⭐ 저장된 좌표 보관 */
+                    /** 저장된 좌표 보관 */
                     savedLat = data.lat
                     savedLng = data.lng
 
-                    /** ⭐ 지도 마커 업데이트 */
+                    /** 지도 마커 업데이트 */
                     updateMapMarker()
 
                     btnContact.setOnClickListener {
@@ -88,7 +88,7 @@ class PostDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
-        /** ⭐ 연락처 팝업 상태 처리 */
+        /** 연락처 팝업 상태 처리 */
         viewModel.contactState.collectWhenStarted(this) { state ->
             when (state) {
                 is PostDetailViewModel.ContactState.Success -> {
@@ -104,13 +104,13 @@ class PostDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    /** ⭐ 구글맵 준비 완료 */
+    /** 구글맵 준비 완료 */
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
         updateMapMarker()
     }
 
-    /** ⭐ 지도에 마커 표시 + 카메라 이동 */
+    /** 지도에 마커 표시 + 카메라 이동 */
     private fun updateMapMarker() {
         val lat = savedLat ?: return
         val lng = savedLng ?: return

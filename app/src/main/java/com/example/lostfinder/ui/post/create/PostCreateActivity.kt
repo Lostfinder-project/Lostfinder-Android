@@ -119,7 +119,7 @@ class PostCreateActivity : ComponentActivity() {
                 return@setOnClickListener
             }
 
-            // DTO 생성 (백엔드 CreatePost DTO에 맞춰서 수정해 둔 상태)
+            // DTO 생성
             val requestDto = PostCreateRequest(
                 title = title,
                 content = content,

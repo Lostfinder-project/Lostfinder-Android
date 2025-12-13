@@ -3,88 +3,108 @@ package com.example.lostfinder.ui.post.list
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.ImageButton
 import androidx.activity.ComponentActivity
-import androidx.activity.viewModels
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.lostfinder.databinding.ActivityPostListBinding
+import com.example.lostfinder.R
 import com.example.lostfinder.ui.post.create.PostCreateActivity
 import com.example.lostfinder.ui.post.detail.PostDetailActivity
-import com.example.lostfinder.util.collectWhenStarted
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.flow.collectLatest
 
 class PostListActivity : ComponentActivity() {
 
-    private lateinit var binding: ActivityPostListBinding
-    private val viewModel: PostListViewModel by viewModels()
+    private lateinit var viewModel: PostListViewModel
+    private lateinit var layoutPagination: LinearLayout
 
-    companion object {
-        private const val REQ_CREATE_POST = 1001
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityPostListBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        setupRecyclerView()
-        observeData()
-
-        // 상단 새로고침 버튼
-        binding.btnRefresh.setOnClickListener {
-            Log.d("POST_LIST", "새로고침 버튼 눌림")
-            refreshList()
-        }
-
-        // 당겨서 새로고침
-        binding.swipeRefresh.setOnRefreshListener {
-            refreshList()
-        }
-
-        // 글쓰기 버튼
-        binding.btnCreatePost.setOnClickListener {
-            val intent = Intent(this, PostCreateActivity::class.java)
-            startActivityForResult(intent, REQ_CREATE_POST)
-        }
-
-        // 최초 로딩
-        viewModel.loadPosts()
-    }
-
-    private fun setupRecyclerView() {
-        binding.recyclerPosts.layoutManager = LinearLayoutManager(this)
-    }
-
-    private fun observeData() {
-
-        viewModel.posts.collectWhenStarted(this) { postList ->
-            binding.recyclerPosts.adapter = PostListAdapter(postList) { postId ->
-                val intent = Intent(this, PostDetailActivity::class.java)
-                intent.putExtra("postId", postId)
-                startActivity(intent)
+    /** 🔥 글쓰기 후 결과 받는 런처 */
+    private val createPostLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                // 글쓰기 성공 → 첫 페이지 새로고침
+                viewModel.loadPosts(0)
             }
         }
 
-        // 로딩 완료 이벤트
-        viewModel.refreshDone.collectWhenStarted(this) {
-            binding.swipeRefresh.isRefreshing = false
-            // 다음 로딩을 위해 초기화
-            viewModel.resetRefreshFlag()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_post_list)
+
+        viewModel = ViewModelProvider(this)[PostListViewModel::class.java]
+
+        val recycler = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recyclerPosts)
+        recycler.layoutManager = LinearLayoutManager(this)
+
+        layoutPagination = findViewById(R.id.layoutPagination)
+
+        val swipeRefresh = findViewById<androidx.swiperefreshlayout.widget.SwipeRefreshLayout>(
+            R.id.swipeRefresh
+        )
+
+        /** 첫 로딩 */
+        viewModel.loadPosts(0)
+
+        /** 🔥 게시글 목록 변경 시 UI 갱신 */
+        lifecycleScope.launchWhenStarted {
+            viewModel.posts.collectLatest { list ->
+                recycler.adapter = PostListAdapter(list) { id ->
+
+                    // 🔥 상세 페이지 id 키 통일 (postId 사용!)
+                    val intent = Intent(this@PostListActivity, PostDetailActivity::class.java)
+                    intent.putExtra("postId", id)
+                    startActivity(intent)
+                }
+            }
+        }
+
+        /** 페이지 수 변경 시 번호 갱신 */
+        lifecycleScope.launchWhenStarted {
+            viewModel.totalPages.collectLatest { total ->
+                drawPagination(total, viewModel.currentPage.value)
+            }
+        }
+
+        /** 현재 페이지 변경 시 번호 갱신 */
+        lifecycleScope.launchWhenStarted {
+            viewModel.currentPage.collectLatest { page ->
+                drawPagination(viewModel.totalPages.value, page)
+            }
+        }
+
+
+
+        /** 아래로 당겨 새로고침 */
+        swipeRefresh.setOnRefreshListener {
+            viewModel.loadPosts(viewModel.currentPage.value)
+            swipeRefresh.isRefreshing = false
+        }
+
+        /** 🔥 글쓰기 버튼 → 결과받기 방식으로 변경 */
+        findViewById<FloatingActionButton>(R.id.btnCreatePost).setOnClickListener {
+            val intent = Intent(this, PostCreateActivity::class.java)
+            createPostLauncher.launch(intent)
         }
     }
 
+    /** 페이지 번호 UI 생성 */
+    private fun drawPagination(totalPages: Int, current: Int) {
+        layoutPagination.removeAllViews()
 
-    /** 리스트 새로고침 공통 로직 */
-    private fun refreshList() {
-        binding.swipeRefresh.isRefreshing = true
-        viewModel.loadPosts()
-    }
-
-    /** 글 작성 후 돌아왔을 때 자동 새로고침 */
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQ_CREATE_POST && resultCode == Activity.RESULT_OK) {
-            refreshList()
+        for (i in 0 until totalPages) {
+            val tv = TextView(this).apply {
+                text = (i + 1).toString()
+                textSize = if (i == current) 20f else 16f
+                setPadding(25, 10, 25, 10)
+                setOnClickListener {
+                    viewModel.loadPosts(i)
+                }
+            }
+            layoutPagination.addView(tv)
         }
     }
 }

@@ -51,7 +51,9 @@
             android:text="회원가입"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"/>
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/primary_gray"
+            android:textColor="@android:color/white"/>
 
         <ProgressBar
             android:id="@+id/progressSignup"
