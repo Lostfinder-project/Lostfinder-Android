@@ -7,4 +7,24 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="primary_navy">#1F3A5F</color>
+    <color name="primary_blue">#4A90E2</color>
+    <color name="background_light">#F5F7FA</color>
+    <color name="primary_gray">#2F3A44</color>   <!-- 메인 (블루그레이) -->
+    <color name="primary_gray_light">#DEE2E6</color> <!-- 보조 -->
+    <!-- Header (상단바) -->
+    <color name="navy_header">#1F3A5F</color>
+    <color name="background_dark">#1A202C</color>
+    <!-- Screen background (밝은 네이비) -->
+    <color name="navy_bg_light">#404C7E</color>
+    <color name="navy_bg_dark">#1F3A5F</color>
+    <color name="item_card_bg">#2D3748</color>
+    <!-- Text -->
+    <color name="text_primary">#F7FAFC</color>
+    <color name="text_secondary">#A0AEC0</color>
+
+    <!-- Image placeholder -->
+    <color name="image_placeholder">#4A5568</color>
+
+
 </resources>

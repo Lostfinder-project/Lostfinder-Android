@@ -15,21 +15,24 @@ class PostListViewModel : ViewModel() {
     private val _posts = MutableStateFlow<List<PostListItem>>(emptyList())
     val posts: StateFlow<List<PostListItem>> = _posts
 
-    // 로딩 종료 신호
-    private val _refreshDone = MutableStateFlow(false)
-    val refreshDone: StateFlow<Boolean> = _refreshDone
+    private val _totalPages = MutableStateFlow(1)
+    val totalPages: StateFlow<Int> = _totalPages
 
-    fun resetRefreshFlag() {
-        _refreshDone.value = false
-    }
-    fun loadPosts() {
+    private val _currentPage = MutableStateFlow(0)
+    val currentPage: StateFlow<Int> = _currentPage
+
+    fun loadPosts(page: Int = 0) {
         viewModelScope.launch {
             try {
-                val response = repo.getPosts()
+                val response = repo.getPosts(page)
 
                 if (response.isSuccessful) {
-                    val page = response.body()
-                    val list = page?.content ?: emptyList()
+                    val body = response.body()
+
+                    _currentPage.value = page
+                    _totalPages.value = body?.totalPages ?: 1
+
+                    val list = body?.content ?: emptyList()
 
                     _posts.value = list.map {
                         PostListItem(
@@ -40,10 +43,8 @@ class PostListViewModel : ViewModel() {
                         )
                     }
                 }
-            } catch (_: Exception) {
-            } finally {
-                // 무조건 실행됨
-                _refreshDone.value = true
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

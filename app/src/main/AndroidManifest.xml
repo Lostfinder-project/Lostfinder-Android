@@ -5,6 +5,10 @@
     <!-- 인터넷 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -14,9 +18,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Lostfinder"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:usesCleartextTraffic="true">
 
-        <!-- ★ 앱 시작화면: 로그인 -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyABMTgx0fTdSc9jvRiGa84wYdbiZ_WO18E" />
+
+        <!--  앱 시작화면: 로그인 -->
         <activity
             android:name=".ui.login.LoginActivity"
             android:exported="true">
@@ -31,12 +40,12 @@
             android:name=".ui.signup.SignupActivity"
             android:exported="false" />
 
-        <!-- ★ 게시글 목록 화면 (로그인 성공 후 이동하는 화면) -->
+        <!-- 게시글 목록 화면 (로그인 성공 후 이동하는 화면) -->
         <activity
             android:name=".ui.post.list.PostListActivity"
             android:exported="false" />
 
-        <!-- ★ 게시글 상세 화면 -->
+        <!-- 게시글 상세 화면 -->
         <activity
             android:name=".ui.post.detail.PostDetailActivity"
             android:exported="false" />
@@ -44,6 +53,10 @@
         <!-- 필요 시 게시글 작성 화면 추가 가능-->
         <activity
             android:name=".ui.post.create.PostCreateActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.map.MapSelectActivity"
             android:exported="false" />
 
 

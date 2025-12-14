@@ -1,54 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background_dark">
 
-    <!-- 상단 제목 + 새로고침 버튼 -->
+    <!-- 상단 헤더 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:padding="20dp"
-        android:gravity="center_vertical">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/navy_header">
 
         <TextView
             android:id="@+id/textTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="분실물 게시글"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content" />
-
-        <ImageButton
-            android:id="@+id/btnRefresh"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@android:color/transparent"
-            android:padding="4dp"
-            android:src="@android:drawable/ic_popup_sync"
-            android:contentDescription="새로고침" />
+            android:textColor="@android:color/white"/>
     </LinearLayout>
 
-    <!-- ★★ paddingTop 제거 + CoordinatorLayout 안에서 바로 아래 배치 ★★ -->
+    <!-- 게시글 목록 -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="70dp">
+        android:layout_marginTop="72dp"
+        android:layout_marginBottom="52dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerPosts"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:padding="12dp"
+            android:paddingBottom="96dp"
+            android:clipToPadding="false"/>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- 글쓰기 버튼 -->
+    <!-- 페이지네이션 -->
+    <LinearLayout
+        android:id="@+id/layoutPagination"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:background="@color/primary_gray"/>
+
+    <!-- 글쓰기 FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnCreatePost"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
         android:layout_margin="20dp"
-        android:src="@android:drawable/ic_menu_edit" />
+        android:layout_gravity="bottom|end"
+        android:backgroundTint="@color/navy_header"
+        android:tint="@android:color/white"
+        android:src="@android:drawable/ic_menu_edit"/>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

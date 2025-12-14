@@ -2,7 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/background_dark">
 
     <LinearLayout
         android:orientation="vertical"
@@ -12,9 +13,11 @@
         <ImageView
             android:id="@+id/imgPost"
             android:layout_width="match_parent"
-            android:layout_height="220dp"
-            android:scaleType="centerCrop"
-            android:background="#E0E0E0" />
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:contentDescription="이미지" />
+
 
         <TextView
             android:id="@+id/textTitle"
@@ -22,7 +25,8 @@
             android:textSize="22sp"
             android:textStyle="bold"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"/>
 
         <TextView
             android:id="@+id/textContent"
@@ -31,12 +35,39 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
+        <TextView
+            android:id="@+id/textFoundLocationLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="습득 장소"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:id="@+id/textFoundLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#444444"
+            android:textSize="15sp"
+            android:layout_marginTop="4dp" />
+        <fragment
+            android:id="@+id/detailMap"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"/>
+
+
         <Button
             android:id="@+id/btnContact"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="작성자 연락처 보기" />
+            android:text="작성자 연락처 보기"
+            android:backgroundTint="@color/primary_gray"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:paddingVertical="12dp" />
 
     </LinearLayout>
 </ScrollView>

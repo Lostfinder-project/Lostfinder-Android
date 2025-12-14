@@ -26,15 +26,20 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="12dp"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/primary_navy"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"/>
 
     <Button
         android:id="@+id/btnGoSignup"
-        android:text="회원가입"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp"
-        android:layout_marginTop="10dp" />
+        android:text="회원가입"
+        android:backgroundTint="@color/primary_gray_light"
+        android:textColor="@color/primary_navy"
+        android:layout_marginTop="10dp"/>
+
 
     <ProgressBar
         android:id="@+id/progressLogin"

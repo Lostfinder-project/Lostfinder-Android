@@ -7,5 +7,7 @@ data class PostDetailResponse(
     val imageUrl: String?,
     val foundLocation: String,
     val writerName: String,
-    val writerPhone: String
+    val writerPhone: String,
+    val lat: Double?,
+    val lng: Double?
 )
