@@ -8,8 +8,13 @@ class PostRepository {
 
     private val api = RetrofitInstance.postApi
 
-    suspend fun getPosts(page: Int = 0, size: Int = 10) =
-        api.getPosts(page, size)
+    suspend fun getPosts(page: Int = 0,
+                         size: Int = 10,
+                         categoryId: Long? = null
+    ) = api.getPosts(
+        page,
+        size,
+        categoryId)
 
     suspend fun getPostDetail(id: Long) =
         api.getPostDetail(id)

@@ -22,13 +22,14 @@ interface PostApi {
     @POST("/api/posts")
     suspend fun createPost(
         @Part image: MultipartBody.Part?,
-        @Part("data") data: RequestBody      // 🔥 key 이름 "data" 로 통일
+        @Part("data") data: RequestBody
     ): Response<ApiResponse<PostCreateResult>>
 
     @GET("/api/posts")
     suspend fun getPosts(
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 10
+        @Query("size") size: Int = 10,
+        @Query("categoryId") categoryId: Long? = null
     ): Response<PageResponse<PostSummaryResponse>>
 
     @GET("/api/posts/{id}")

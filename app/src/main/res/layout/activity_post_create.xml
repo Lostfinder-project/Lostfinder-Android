@@ -2,7 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/background_dark">
 
     <LinearLayout
         android:orientation="vertical"
@@ -24,7 +25,7 @@
 
         <EditText
             android:id="@+id/editLocation"
-            android:hint="습득 장소(좌표 자동 입력)"
+            android:hint="습득 장소"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
@@ -33,13 +34,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="습득 위치 선택"
-            android:layout_marginTop="12dp"/>
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/primary_gray"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:paddingVertical="12dp"/>
 
-        <EditText
-            android:id="@+id/editCategory"
-            android:hint="카테고리 ID"
+        <Spinner
+            android:id="@+id/spinnerCategory"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"/>
 
         <ImageView
             android:id="@+id/imgPreview"
@@ -54,13 +58,21 @@
             android:id="@+id/btnSelectImage"
             android:text="이미지 선택"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/primary_gray"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:paddingVertical="12dp"/>
 
         <Button
             android:id="@+id/btnUpload"
             android:text="등록하기"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/primary_gray"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:paddingVertical="12dp"/>
 
         <ProgressBar
             android:id="@+id/progressUpload"

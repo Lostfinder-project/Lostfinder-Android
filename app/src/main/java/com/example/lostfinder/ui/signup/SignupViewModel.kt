@@ -24,7 +24,7 @@ class SignupViewModel : ViewModel() {
             val req = SignupRequest(
                 username = username,
                 password = password,
-                name = nickname,   // 🔥 nickname -> name 으로 매핑
+                name = nickname,
                 phone = phone,
                 email = email
             )

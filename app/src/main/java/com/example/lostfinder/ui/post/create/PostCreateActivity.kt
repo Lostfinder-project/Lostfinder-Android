@@ -11,10 +11,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.lostfinder.R
+import com.example.lostfinder.data.model.category.Category
 import com.example.lostfinder.data.model.post.PostCreateRequest
 import com.example.lostfinder.ui.map.MapSelectActivity
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -26,36 +28,33 @@ class PostCreateActivity : ComponentActivity() {
 
     private lateinit var viewModel: PostCreateViewModel
 
-    // 선택된 이미지 URI
+    // 이미지
     private var imageUri: Uri? = null
 
-    // 지도에서 받은 좌표
+    // 지도 좌표
     private var selectedLat: Double? = null
     private var selectedLng: Double? = null
 
-    // 이미지 선택 런처
+    // 카테고리
+    private lateinit var categories: List<Category>
+    private var selectedCategoryId: Long = 0L
+
+    /** 이미지 선택 */
     private val pickImageLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            if (uri != null) {
-                imageUri = uri
-                findViewById<ImageView>(R.id.imgPreview).setImageURI(uri)
-            } else {
-                Toast.makeText(this, "이미지를 선택하지 않았습니다.", Toast.LENGTH_SHORT).show()
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                imageUri = it
+                findViewById<ImageView>(R.id.imgPreview).setImageURI(it)
             }
         }
 
-    // 지도 위치 선택 런처
+    /** 지도 선택 */
     private val mapSelectLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 selectedLat = result.data?.getDoubleExtra("lat", 0.0)
                 selectedLng = result.data?.getDoubleExtra("lng", 0.0)
-
-                Toast.makeText(
-                    this,
-                    "위치 선택 완료: $selectedLat, $selectedLng",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, "위치 선택 완료", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -67,45 +66,41 @@ class PostCreateActivity : ComponentActivity() {
 
         val editTitle = findViewById<EditText>(R.id.editTitle)
         val editContent = findViewById<EditText>(R.id.editContent)
-        val editLocation = findViewById<EditText>(R.id.editLocation) // 사용자가 직접 쓰는 설명
-        val editCategory = findViewById<EditText>(R.id.editCategory)
+        val editLocation = findViewById<EditText>(R.id.editLocation)
+        val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
 
-        val imgPreview = findViewById<ImageView>(R.id.imgPreview)
         val btnSelectImage = findViewById<Button>(R.id.btnSelectImage)
         val btnSelectLocation = findViewById<Button>(R.id.btnSelectLocation)
         val btnUpload = findViewById<Button>(R.id.btnUpload)
         val progress = findViewById<ProgressBar>(R.id.progressUpload)
 
-        /** 이미지 선택 버튼 **/
+        /** 카테고리 로딩 */
+        loadCategories(spinnerCategory)
+
+        /** 이미지 선택 */
         btnSelectImage.setOnClickListener {
-            // SAF 사용: 갤러리에서 이미지 선택
             pickImageLauncher.launch("image/*")
         }
 
-        /** 지도 위치 선택 버튼 **/
+        /** 지도 선택 */
         btnSelectLocation.setOnClickListener {
-            val intent = Intent(this, MapSelectActivity::class.java)
-            mapSelectLauncher.launch(intent)
+            mapSelectLauncher.launch(Intent(this, MapSelectActivity::class.java))
         }
 
-        /** 업로드 버튼 **/
+        /** 업로드 */
         btnUpload.setOnClickListener {
 
             val title = editTitle.text.toString().trim()
             val content = editContent.text.toString().trim()
             val locationText = editLocation.text.toString().trim()
-            val categoryText = editCategory.text.toString().trim()
 
-            // 간단 유효성 검사
-            if (title.isEmpty() || content.isEmpty() || locationText.isEmpty() || categoryText.isEmpty()) {
-                Toast.makeText(this, "제목, 내용, 습득 장소, 카테고리를 모두 입력하세요.", Toast.LENGTH_SHORT).show()
+            if (title.isEmpty() || content.isEmpty() || locationText.isEmpty()) {
+                Toast.makeText(this, "제목, 내용, 습득 장소를 입력하세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val categoryId = try {
-                categoryText.toLong()
-            } catch (e: NumberFormatException) {
-                Toast.makeText(this, "카테고리 ID는 숫자여야 합니다.", Toast.LENGTH_SHORT).show()
+            if (selectedCategoryId == 0L) {
+                Toast.makeText(this, "카테고리를 선택하세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -119,12 +114,11 @@ class PostCreateActivity : ComponentActivity() {
                 return@setOnClickListener
             }
 
-            // DTO 생성
             val requestDto = PostCreateRequest(
                 title = title,
                 content = content,
                 foundLocation = locationText,
-                categoryId = categoryId,
+                categoryId = selectedCategoryId,
                 lat = selectedLat!!,
                 lng = selectedLng!!
             )
@@ -132,8 +126,7 @@ class PostCreateActivity : ComponentActivity() {
             val json = Gson().toJson(requestDto)
             val data = json.toRequestBody("application/json".toMediaTypeOrNull())
 
-            // 이미지 Part 생성
-            val imagePart: MultipartBody.Part? = try {
+            val imagePart = try {
                 val file = uriToFile(imageUri!!)
                 MultipartBody.Part.createFormData(
                     "image",
@@ -141,48 +134,91 @@ class PostCreateActivity : ComponentActivity() {
                     file.asRequestBody("image/*".toMediaTypeOrNull())
                 )
             } catch (e: IOException) {
-                e.printStackTrace()
-                Toast.makeText(this, "이미지 파일 처리 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "이미지 처리 오류", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // 업로드 호출
             viewModel.createPost(imagePart, data)
         }
 
-        /** 업로드 상태 관찰 **/
+        /** 업로드 상태 */
         lifecycleScope.launchWhenStarted {
             viewModel.uploadState.collectLatest { state ->
                 when (state) {
                     PostCreateViewModel.UploadState.Loading -> {
                         progress.visibility = ProgressBar.VISIBLE
                     }
-
                     PostCreateViewModel.UploadState.Success -> {
                         progress.visibility = ProgressBar.GONE
                         Toast.makeText(this@PostCreateActivity, "등록 완료!", Toast.LENGTH_SHORT).show()
                         setResult(Activity.RESULT_OK)
                         finish()
                     }
-
                     is PostCreateViewModel.UploadState.Error -> {
                         progress.visibility = ProgressBar.GONE
                         Toast.makeText(this@PostCreateActivity, state.msg, Toast.LENGTH_SHORT).show()
-                        Log.e("PostCreate", "업로드 실패: ${state.msg}")
+                        Log.e("PostCreate", state.msg)
                     }
-
                     else -> Unit
                 }
             }
         }
     }
+    //카테고리 불러오기
+    private fun loadCategories(spinner: Spinner) {
+        lifecycleScope.launch {
+            try {
+                val response = viewModel.getCategories()
 
-    /**
-     * SAF Uri → Temp File 변환
-     */
+                val categoryList = response.data
+                if (categoryList.isNullOrEmpty()) {
+                    Toast.makeText(
+                        this@PostCreateActivity,
+                        "카테고리를 불러올 수 없습니다.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+
+                categories = categoryList
+
+                val adapter = ArrayAdapter(
+                    this@PostCreateActivity,
+                    android.R.layout.simple_spinner_item,
+                    categories.map { it.name }
+                )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                spinner.adapter = adapter
+
+                spinner.onItemSelectedListener =
+                    object : AdapterView.OnItemSelectedListener {
+                        override fun onItemSelected(
+                            parent: AdapterView<*>,
+                            view: android.view.View?,
+                            position: Int,
+                            id: Long
+                        ) {
+                            selectedCategoryId = categories[position].id
+                        }
+
+                        override fun onNothingSelected(parent: AdapterView<*>) {}
+                    }
+
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@PostCreateActivity,
+                    "카테고리 로딩 중 오류 발생",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+
+    /** Uri → File */
     private fun uriToFile(uri: Uri): File {
         val inputStream = contentResolver.openInputStream(uri)
-            ?: throw IOException("InputStream is null for uri: $uri")
+            ?: throw IOException("InputStream is null")
         val tempFile = File.createTempFile("upload_", ".jpg", cacheDir)
         tempFile.outputStream().use { output ->
             inputStream.use { input ->

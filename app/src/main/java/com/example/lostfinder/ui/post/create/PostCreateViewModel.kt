@@ -2,8 +2,12 @@ package com.example.lostfinder.ui.post.create
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lostfinder.data.api.CategoryApi
+import com.example.lostfinder.data.model.ApiResponse
+import com.example.lostfinder.data.model.category.Category
 import com.example.lostfinder.data.model.post.PostCreateRequest
 import com.example.lostfinder.data.repository.PostRepository
+import com.lostfinder.app.data.api.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -13,9 +17,14 @@ import okhttp3.RequestBody
 class PostCreateViewModel : ViewModel() {
 
     private val repo = PostRepository()
+    private val categoryApi = RetrofitInstance.categoryApi
 
     private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
     val uploadState: StateFlow<UploadState> = _uploadState
+
+    suspend fun getCategories(): ApiResponse<List<Category>> {
+        return categoryApi.getCategories()
+    }
 
     fun createPost(image: MultipartBody.Part?, data: RequestBody) {
         viewModelScope.launch {
