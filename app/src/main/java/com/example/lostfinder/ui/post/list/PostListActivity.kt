@@ -3,9 +3,7 @@ package com.example.lostfinder.ui.post.list
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.ImageButton
+import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
@@ -14,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.lostfinder.R
 import com.example.lostfinder.ui.post.create.PostCreateActivity
 import com.example.lostfinder.ui.post.detail.PostDetailActivity
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.flow.collectLatest
 
 class PostListActivity : ComponentActivity() {
@@ -22,11 +19,9 @@ class PostListActivity : ComponentActivity() {
     private lateinit var viewModel: PostListViewModel
     private lateinit var layoutPagination: LinearLayout
 
-    /** 🔥 글쓰기 후 결과 받는 런처 */
     private val createPostLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                // 글쓰기 성공 → 첫 페이지 새로고침
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
                 viewModel.loadPosts(0)
             }
         }
@@ -40,69 +35,96 @@ class PostListActivity : ComponentActivity() {
         val recycler = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recyclerPosts)
         recycler.layoutManager = LinearLayoutManager(this)
 
+        val spinner = findViewById<Spinner>(R.id.spinnerFilterCategory)
+        val swipeRefresh =
+            findViewById<androidx.swiperefreshlayout.widget.SwipeRefreshLayout>(R.id.swipeRefresh)
+
         layoutPagination = findViewById(R.id.layoutPagination)
 
-        val swipeRefresh = findViewById<androidx.swiperefreshlayout.widget.SwipeRefreshLayout>(
-            R.id.swipeRefresh
-        )
+        /** 카테고리 observe */
+        lifecycleScope.launchWhenStarted {
+            viewModel.categories.collectLatest { categories ->
+                val names = mutableListOf("전체")
+                names.addAll(categories.map { it.name })
 
-        /** 첫 로딩 */
-        viewModel.loadPosts(0)
+                val adapter = ArrayAdapter(
+                    this@PostListActivity,
+                    android.R.layout.simple_spinner_item,
+                    names
+                )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                spinner.adapter = adapter
 
-        /** 🔥 게시글 목록 변경 시 UI 갱신 */
+                spinner.onItemSelectedListener =
+                    object : AdapterView.OnItemSelectedListener {
+                        override fun onItemSelected(
+                            parent: AdapterView<*>,
+                            view: android.view.View?,
+                            position: Int,
+                            id: Long
+                        ) {
+                            val categoryId =
+                                if (position == 0) null
+                                else categories[position - 1].id
+
+                            viewModel.setCategory(categoryId)
+                            viewModel.loadPosts(0)
+                        }
+
+                        override fun onNothingSelected(parent: AdapterView<*>) {}
+                    }
+            }
+        }
+
+        /** 게시글 목록 observe */
         lifecycleScope.launchWhenStarted {
             viewModel.posts.collectLatest { list ->
-                recycler.adapter = PostListAdapter(list) { id ->
-
-                    // 🔥 상세 페이지 id 키 통일 (postId 사용!)
-                    val intent = Intent(this@PostListActivity, PostDetailActivity::class.java)
-                    intent.putExtra("postId", id)
+                recycler.adapter = PostListAdapter(list) { postId ->
+                    val intent =
+                        Intent(this@PostListActivity, PostDetailActivity::class.java)
+                    intent.putExtra("postId", postId)
                     startActivity(intent)
                 }
             }
         }
 
-        /** 페이지 수 변경 시 번호 갱신 */
+        /** 페이지네이션 observe */
         lifecycleScope.launchWhenStarted {
             viewModel.totalPages.collectLatest { total ->
                 drawPagination(total, viewModel.currentPage.value)
             }
         }
 
-        /** 현재 페이지 변경 시 번호 갱신 */
+        /** SwipeRefresh 로딩 상태 연동 */
         lifecycleScope.launchWhenStarted {
-            viewModel.currentPage.collectLatest { page ->
-                drawPagination(viewModel.totalPages.value, page)
+            viewModel.isLoading.collectLatest { loading ->
+                swipeRefresh.isRefreshing = loading
             }
         }
 
-
-
-        /** 아래로 당겨 새로고침 */
+        /** 새로고침 트리거 */
         swipeRefresh.setOnRefreshListener {
-            viewModel.loadPosts(viewModel.currentPage.value)
-            swipeRefresh.isRefreshing = false
+            viewModel.loadPosts(0)
         }
 
-        /** 🔥 글쓰기 버튼 → 결과받기 방식으로 변경 */
-        findViewById<FloatingActionButton>(R.id.btnCreatePost).setOnClickListener {
-            val intent = Intent(this, PostCreateActivity::class.java)
-            createPostLauncher.launch(intent)
+        findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(
+            R.id.btnCreatePost
+        ).setOnClickListener {
+            createPostLauncher.launch(
+                Intent(this, PostCreateActivity::class.java)
+            )
         }
     }
 
-    /** 페이지 번호 UI 생성 */
     private fun drawPagination(totalPages: Int, current: Int) {
         layoutPagination.removeAllViews()
 
         for (i in 0 until totalPages) {
             val tv = TextView(this).apply {
                 text = (i + 1).toString()
-                textSize = if (i == current) 20f else 16f
                 setPadding(25, 10, 25, 10)
-                setOnClickListener {
-                    viewModel.loadPosts(i)
-                }
+                textSize = if (i == current) 20f else 16f
+                setOnClickListener { viewModel.loadPosts(i) }
             }
             layoutPagination.addView(tv)
         }

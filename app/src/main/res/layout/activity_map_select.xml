@@ -15,6 +15,10 @@
         android:id="@+id/btnSelect"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Location" />
+        android:text="Select Location"
+        android:backgroundTint="@color/primary_gray"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:paddingVertical="12dp"/>
 
 </LinearLayout>

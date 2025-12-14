@@ -1,5 +1,6 @@
 package com.lostfinder.app.data.api
 
+import com.example.lostfinder.data.api.CategoryApi
 import com.example.lostfinder.data.api.MemberApi
 import com.example.lostfinder.data.api.PostApi
 import com.example.lostfinder.util.TokenManager
@@ -38,4 +39,5 @@ object RetrofitInstance {
 
     val memberApi: MemberApi = retrofit.create(MemberApi::class.java)
     val postApi: PostApi = retrofit.create(PostApi::class.java)
+    val categoryApi: CategoryApi = retrofit.create(CategoryApi::class.java)
 }

@@ -13,7 +13,12 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@color/navy_header">
-
+        <Spinner
+            android:id="@+id/spinnerFilterCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:background="@color/primary_navy"/>
         <TextView
             android:id="@+id/textTitle"
             android:layout_width="wrap_content"

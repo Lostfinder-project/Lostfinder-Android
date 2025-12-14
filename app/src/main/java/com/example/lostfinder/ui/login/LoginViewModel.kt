@@ -24,7 +24,7 @@ class LoginViewModel : ViewModel() {
 
             if (response.isSuccessful) {
                 val body = response.body()
-                val token = body?.data?.accessToken   // 🔥 핵심: data.accessToken
+                val token = body?.data?.accessToken
 
                 if (!token.isNullOrEmpty()) {
                     TokenManager.saveToken(token)
